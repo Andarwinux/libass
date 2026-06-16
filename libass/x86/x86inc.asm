@@ -361,7 +361,7 @@ DECLARE_REG_TMP_SIZE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
 %endmacro
 
 %define required_stack_alignment ((mmsize + 15) & ~15)
-%define vzeroupper_required (mmsize > 16 && (ARCH_X86_64 == 0 || xmm_regs_used > 16 || notcpuflag(avx512)))
+%define vzeroupper_required 0
 %define high_mm_regs (16*cpuflag(avx512))
 
 ; Large stack allocations on Windows need to use stack probing in order
@@ -763,9 +763,9 @@ DECLARE_ARG 7, 8, 9, 10, 11, 12, 13, 14
 
 %define last_branch_adr $$
 %macro AUTO_REP_RET 0
-    %if notcpuflag(ssse3)
-        times ((last_branch_adr-$)>>31)+1 rep ; times 1 iff $ == last_branch_adr.
-    %endif
+    ;%if notcpuflag(ssse3)
+    ;    times ((last_branch_adr-$)>>31)+1 rep ; times 1 iff $ == last_branch_adr.
+    ;%endif
     ret
     annotate_function_size
 %endmacro
@@ -828,12 +828,17 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
     %xdefine current_function_section __SECT__
     %if FORMAT_ELF
         %if %1
+            section .text.%2 progbits alloc exec nowrite
+            %define last_branch_adr $$
             global %2:function hidden
         %else
             global %2:function
         %endif
     %elif FORMAT_MACHO && HAVE_PRIVATE_EXTERN && %1
         global %2:private_extern
+    %elif WIN64 && %1
+        section .text$%2 comdat=1:%2
+        %define last_branch_adr $$
     %else
         global %2
     %endif
@@ -1085,7 +1090,7 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
 %endmacro
 
 %macro INIT_XMM 0-1+
-    %assign avx_enabled FORCE_VEX_ENCODING
+    %assign avx_enabled 1
     %define RESET_MM_PERMUTATION INIT_XMM %1
     %define mmsize 16
     %define mova movdqa
