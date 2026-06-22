@@ -4,6 +4,7 @@ checkasm_src = files(
     'blend_bitmaps.c',
     'be_blur.c',
     'blur.c',
+    'shift_bitmap.c',
 )
 
 checkasm_src_x86 = files(
